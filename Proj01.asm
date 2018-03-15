@@ -14,6 +14,14 @@ mWriteString MACRO myString
 	popad
 ENDM
 
+mWriteStringNoOffset	MACRO	myString
+	pushad
+	mov		EDX,myString
+	call	WriteString
+	call	CrLf
+	popad
+ENDM
+
 mWriteDec	MACRO	myNum
 	pushad
 	mov		EAX,myNum
@@ -23,8 +31,9 @@ mWriteDec	MACRO	myNum
 ENDM
 
 
-prepReadVal MACRO myString, sizeOfMyString, X, check
+prepReadVal MACRO myString, sizeOfMyString, X, check, gimmieNext
 	pushad
+	push	OFFSET	gimmieNext
 	push	OFFSET	check
 	push	OFFSET	X
 	push	OFFSET	myString
@@ -33,7 +42,8 @@ prepReadVal MACRO myString, sizeOfMyString, X, check
 	popad
 ENDM
 
-mGetString	MACRO myString,	sizeOfMyString
+mGetString	MACRO myString,	sizeOfMyString, gimmieNext
+	mWriteStringNoOffset gimmieNext
 	mov		ECX,10
 	mov		EDX,myString
 	call	ReadString
@@ -98,10 +108,18 @@ mPrintArray	MACRO	myArray
 	popad
 ENDM
 
+mPrepWriteVal	MACRO	myNum	;TO DO Write this Macro Wrapper for the yet to be written WriteVal Proc
+	pushad
+	push	
+ENDM
+
 .data
 
 myString	BYTE	11
 greetings	BYTE	"Hey. Give me 10 numbers, then Ill find some averages.",0
+badInput	BYTE	"OH. MY. GOD. HOW COULD YOU GIVE ME BAD INPUT?? OVO Rethink and try again.",0
+gimmieNext	BYTE	"Okay, give me a number:",0
+yourInput	BYTE	"You entered the following numbers:",0
 storedNumbers	DWORD	10 DUP(0)
 sizeOfStored	DWORD	0
 sizeOfMyString	DWORD 0
@@ -113,7 +131,8 @@ check			DWORD 0
 main PROC
 	mWriteString greetings
 	TryAgain:
-	prepReadVal  myString, sizeOfMyString, X, check
+
+	prepReadVal  myString, sizeOfMyString, X, check, gimmieNext
 	
 
 	push	EBX
@@ -124,6 +143,7 @@ main PROC
 
 	;examine the check variable. 1 = Error in input, 0 means its good.
 	pop		EBX
+	mWriteString badInput
 	mClearString myString, sizeOfMyString
 	mClearX	X
 	mClearCheck	check
@@ -134,6 +154,7 @@ main PROC
 	mAppendNum	storedNumbers, X, sizeOfStored
 	mClearString myString, sizeOfMyString
 	mClearX	X
+
 	INC	sizeOfStored
 	push	EBX
 	mov	EBX,10
@@ -141,7 +162,10 @@ main PROC
 	pop		EBX
 	JL	TryAgain
 
+	mWriteString yourInput
+
 	mPrintArray	storedNumbers
+
 	
 
 	exit
@@ -267,12 +291,12 @@ Verify	ENDP
 
 ReadVal	PROC
 	mov	EBP,ESP
-	mGetString	[EBP+8],[EBP+4] ; @myString, @sizeOfMyString
+	mGetString	[EBP+8],[EBP+4],[EBP+20] ; @myString, @sizeOfMyString, @gimmieNext
 	mVerify		[EBP+8],[EBP+4],[EBP+12],[EBP+16]	;
 	mov	EBX,[EBP+16]
 	mov	EBX,[EBX]
 	CMP	EBX,1
-	ret 16
+	ret 20
 ReadVal	ENDP
 
 END main
