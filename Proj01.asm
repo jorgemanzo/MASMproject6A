@@ -109,21 +109,42 @@ mPrintArray	MACRO	myArray
 ENDM
 
 mPrepWriteVal	MACRO	myNum	;TO DO Write this Macro Wrapper for the yet to be written WriteVal Proc
+	;pushad
+	;push	
+ENDM
+
+mSumMyArray	MACRO	storedNumbers, sizeOfStored, superSum
 	pushad
-	push	
+	push	OFFSET storedNumbers
+	push	OFFSET sizeOfStored
+	push	OFFSET superSum
+	call	sumMeUp
+	popad
+ENDM
+
+prepWriteVal MACRO	myNumber, outString
+	pushad
+	push	myNumber
+	push	OFFSET	outString
+	call	WriteVal
+	popad
 ENDM
 
 .data
-
-myString	BYTE	11
+myString	BYTE	11	DUP(?)
+tempString	BYTE	11	DUP(0)
+outString	BYTE	11	DUP(0)
 greetings	BYTE	"Hey. Give me 10 numbers, then Ill find some averages.",0
 badInput	BYTE	"OH. MY. GOD. HOW COULD YOU GIVE ME BAD INPUT?? OVO Rethink and try again.",0
 gimmieNext	BYTE	"Okay, give me a number:",0
 yourInput	BYTE	"You entered the following numbers:",0
-storedNumbers	DWORD	10 DUP(0)
-sizeOfStored	DWORD	0
+yourSumIs	BYTE	"Your sum is:",0
+storedNumbers	DWORD 10 DUP(0)
+sizeOfStored	DWORD 0
 sizeOfMyString	DWORD 0
+zeroToSize		DWORD 0
 X				DWORD 0
+superSum		DWORD 0
 check			DWORD 0
 
 
@@ -166,10 +187,72 @@ main PROC
 
 	mPrintArray	storedNumbers
 
-	
+	mSumMyArray storedNumbers, sizeOfStored, superSum
+
+	mWriteString yourSumIs
+
+	mWriteDec superSum
+
+	prepWriteVal 123, outString
+
 
 	exit
 main ENDP
+
+writeVal	PROC
+	mov	EBP,ESP
+
+	mov	EBX,[EBP+4]
+	ADD	EBX,10
+	mov	EDI,EBX
+	mov	ECX,10
+	mov	EAX,[EBP+8]
+	CLD
+	forEveryCharInNum:
+		xor	EDX,EDX
+		DIV	ECX
+		ADD	EDX,48
+		push	EAX
+		xor	EAX,EAX
+		mov	AL,DL
+		STOSB
+		xor	EAX,EAX
+		pop	EAX
+		CMP	EAX,0
+		JG	forEveryCharInNum
+		
+
+	mWriteStringNoOffset [EBP+4]
+	ret	8
+writeVal	ENDP
+
+sumMeUp	PROC
+	mov	EBP,ESP
+
+	mov	EBX,[EBP+8]	;OFFSET of SizeOfStored in EBX
+	mov	EDX,[EBX]	;De-ref OFFSET and store what lives there in EDX
+
+	xor	EBX,EBX
+	mov	EBX,[EBP+4]	;OFFSET of Supersum now lives in EBX
+	mov	EAX,[EBX]	;De-ref OFFSET and store what lives there in EAX
+
+	xor	EBX,EBX
+	mov	EBX,[EBP+12] ;OFFSET of storedNumbers in EBX
+	
+	xor	ECX,ECX
+	forEveryNum:
+		ADD	EAX,[EBX+ECX*4]
+		INC	ECX
+		CMP	ECX,EDX
+		JL	forEveryNum
+
+	push	EBX
+	mov		EBX,[EBP+4]
+	mov		[EBX],EAX
+	pop		EBX
+
+	ret	12
+sumMeUp	ENDP
 
 PrintUs	PROC
 	mov	EBP,ESP
