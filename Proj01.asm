@@ -31,8 +31,10 @@ mWriteDec	MACRO	myNum
 ENDM
 
 
-prepReadVal MACRO myString, sizeOfMyString, X, check, gimmieNext
+prepReadVal MACRO myString, sizeOfMyString, X, check, gimmieNext, numberSizes, countOfStoredSizes
 	pushad
+	push	OFFSET	countOfStoredSizes
+	push	OFFSET	numberSizes
 	push	OFFSET	gimmieNext
 	push	OFFSET	check
 	push	OFFSET	X
@@ -51,8 +53,10 @@ mGetString	MACRO myString,	sizeOfMyString, gimmieNext
 	mov		[EBX],EAX
 ENDM
 
-mVerify		MACRO myString, SizeOfMyString, X, check
+mVerify		MACRO myString, SizeOfMyString, X, check, numberSizes, countOfStoredSizes
 	pushad
+	push	countOfStoredSizes
+	push	numberSizes
 	push	check
 	push	X
 	push	myString
@@ -60,6 +64,7 @@ mVerify		MACRO myString, SizeOfMyString, X, check
 	call	Verify
 	popad
 ENDM
+
 
 
 mConvert MACRO myChar, X
@@ -101,17 +106,16 @@ mAppendNum	MACRO	myArray, myNum, location
 	popad
 ENDM
 
-mPrintArray	MACRO	myArray
+mPrintArray	MACRO	myArray, outString, numberSizes, countOfStoredSizes
 	pushad
+	push	OFFSET	outString
+	push	OFFSET	numberSizes
+	push	OFFSET	countOfStoredSizes
 	push	OFFSET	myArray
 	call	PrintUs
 	popad
 ENDM
 
-mPrepWriteVal	MACRO	myNum	;TO DO Write this Macro Wrapper for the yet to be written WriteVal Proc
-	;pushad
-	;push	
-ENDM
 
 mSumMyArray	MACRO	storedNumbers, sizeOfStored, superSum
 	pushad
@@ -122,10 +126,11 @@ mSumMyArray	MACRO	storedNumbers, sizeOfStored, superSum
 	popad
 ENDM
 
-prepWriteVal MACRO	myNumber, outString
+prepWriteVal MACRO	myNumber, outString, lengthOfMyNum
 	pushad
+	push	lengthOfMyNum
 	push	myNumber
-	push	OFFSET	outString
+	push	outString
 	call	WriteVal
 	popad
 ENDM
@@ -133,13 +138,15 @@ ENDM
 .data
 myString	BYTE	11	DUP(?)
 tempString	BYTE	11	DUP(0)
-outString	BYTE	11	DUP(0)
+outString	BYTE	11	DUP(?)
 greetings	BYTE	"Hey. Give me 10 numbers, then Ill find some averages.",0
 badInput	BYTE	"OH. MY. GOD. HOW COULD YOU GIVE ME BAD INPUT?? OVO Rethink and try again.",0
 gimmieNext	BYTE	"Okay, give me a number:",0
 yourInput	BYTE	"You entered the following numbers:",0
 yourSumIs	BYTE	"Your sum is:",0
 storedNumbers	DWORD 10 DUP(0)
+numberSizes		DWORD 10 DUP(0)
+countOfStoredSizes	DWORD	0
 sizeOfStored	DWORD 0
 sizeOfMyString	DWORD 0
 zeroToSize		DWORD 0
@@ -153,7 +160,7 @@ main PROC
 	mWriteString greetings
 	TryAgain:
 
-	prepReadVal  myString, sizeOfMyString, X, check, gimmieNext
+	prepReadVal  myString, sizeOfMyString, X, check, gimmieNext, numberSizes, countOfStoredSizes
 	
 
 	push	EBX
@@ -185,7 +192,9 @@ main PROC
 
 	mWriteString yourInput
 
-	mPrintArray	storedNumbers
+	mPrintArray	storedNumbers, outString, numberSizes, countOfStoredSizes
+
+
 
 	mSumMyArray storedNumbers, sizeOfStored, superSum
 
@@ -193,7 +202,8 @@ main PROC
 
 	mWriteDec superSum
 
-	prepWriteVal 123, outString
+	mClearX	countOfStoredSizes
+
 
 
 	exit
@@ -202,12 +212,22 @@ main ENDP
 writeVal	PROC
 	mov	EBP,ESP
 
-	mov	EBX,[EBP+4]
-	ADD	EBX,10
-	mov	EDI,EBX
+	mov	EBX,[EBP+12]
+
+
+	mov	EAX,[EBP+4]
+
+	xor	EDI,EDI
+	ADD	EAX,EBX
+	DEC	EAX
+	mov	EDI,EAX
+
+	xor	EAX,EAX
+	xor	EBX,EBX
+
 	mov	ECX,10
 	mov	EAX,[EBP+8]
-	CLD
+	STD
 	forEveryCharInNum:
 		xor	EDX,EDX
 		DIV	ECX
@@ -220,10 +240,10 @@ writeVal	PROC
 		pop	EAX
 		CMP	EAX,0
 		JG	forEveryCharInNum
-		
+	
 
 	mWriteStringNoOffset [EBP+4]
-	ret	8
+	ret	12
 writeVal	ENDP
 
 sumMeUp	PROC
@@ -261,7 +281,13 @@ PrintUs	PROC
 
 	forEveryChar:
 		mov	EAX,[EBX+ECX*4]
-		mWriteDec EAX
+		;mWriteDec EAX
+		xor	EDX,EDX
+		mov	EDX,[EBP+16]
+		xor	EDI,EDI
+		mov	EDI,[EBP+12]
+		;prepWriteVal EAX, EDX, [EDI+ECX*4]
+		prepWriteVal EAX, EDX, [EDI+ECX*4]
 		INC	ECX
 		CMP	ECX,10
 		JL	forEveryChar
@@ -287,7 +313,7 @@ AppendNumber	PROC
 	mov	[EDX+EAX*4],ECX
 		
 	ret	12
-APpendNumber	ENDP
+AppendNumber	ENDP
 
 ClearCheck	PROC
 	mov	EBP,ESP
@@ -369,17 +395,36 @@ Verify	PROC
 			mov	[EBX],EAX
 			JMP	FINISH
 	FINISH:
-	ret	16
+	xor	EBX,EBX
+	xor	EAX,EAX
+	xor	EDI,EDI
+
+	mov	EBX,[EBP+4]
+	mov	EDI,[EBX]
+
+	mov	EBX,[EBP+24]
+	mov	EAX,[EBX]		;EAX now has the indicy
+
+	mov	EBX,[EBP+20]
+	mov	[EBX+EAX*4],EDI
+
+	INC	EAX
+	xor	EBX,EBX
+	mov	EBX,[EBP+24]
+	mov	[EBX],EAX
+
+	ret	24
 Verify	ENDP
 
 ReadVal	PROC
 	mov	EBP,ESP
 	mGetString	[EBP+8],[EBP+4],[EBP+20] ; @myString, @sizeOfMyString, @gimmieNext
-	mVerify		[EBP+8],[EBP+4],[EBP+12],[EBP+16]	;
+	mVerify		[EBP+8],[EBP+4],[EBP+12],[EBP+16],[EBP+24],[EBP+28]	;
 	mov	EBX,[EBP+16]
 	mov	EBX,[EBX]
 	CMP	EBX,1
-	ret 20
+	ret 28
 ReadVal	ENDP
+
 
 END main
