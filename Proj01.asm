@@ -83,6 +83,14 @@ mClearString MACRO myString, SizeOfMyString
 	popad
 ENDM
 
+mClearStringNoSize MACRO myString, SizeOfMyString
+	pushad
+	push	myString
+	push	SizeOfMyString
+	call	ClearStringNoSize
+	popad
+ENDM
+
 mClearX		MACRO	X
 	pushad
 	push	OFFSET X
@@ -106,6 +114,9 @@ mAppendNum	MACRO	myArray, myNum, location
 	popad
 ENDM
 
+
+;	mPrintArray	storedNumbers, outString, numberSizes, countOfStoredSizes
+
 mPrintArray	MACRO	myArray, outString, numberSizes, countOfStoredSizes
 	pushad
 	push	OFFSET	outString
@@ -116,6 +127,7 @@ mPrintArray	MACRO	myArray, outString, numberSizes, countOfStoredSizes
 	popad
 ENDM
 
+;	mSumMyArray storedNumbers, sizeOfStored, superSum
 
 mSumMyArray	MACRO	storedNumbers, sizeOfStored, superSum
 	pushad
@@ -135,24 +147,45 @@ prepWriteVal MACRO	myNumber, outString, lengthOfMyNum
 	popad
 ENDM
 
+mGetMyLength	MACRO	myNumber, numberLength
+	pushad
+	push	myNumber
+	push	OFFSET	numberLength
+	call	howLongAmI
+	popad
+ENDM
+
+mGetAverage	MACRO	myNumber,	DivideBy, OutNum
+	pushad	
+	push	myNumber
+	push	DivideBy
+	push	OFFSET OutNum
+	call	DivideMeBy
+	popad
+ENDM
+
 .data
 myString	BYTE	11	DUP(?)
 tempString	BYTE	11	DUP(0)
-outString	BYTE	11	DUP(?)
+outString	BYTE	11	DUP(0)
+outAverage	BYTE	11	DUP(0)
 greetings	BYTE	"Hey. Give me 10 numbers, then Ill find some averages.",0
 badInput	BYTE	"OH. MY. GOD. HOW COULD YOU GIVE ME BAD INPUT?? OVO Rethink and try again.",0
 gimmieNext	BYTE	"Okay, give me a number:",0
 yourInput	BYTE	"You entered the following numbers:",0
 yourSumIs	BYTE	"Your sum is:",0
+yourAverage		BYTE	"Your Average is:",0
 storedNumbers	DWORD 10 DUP(0)
 numberSizes		DWORD 10 DUP(0)
 countOfStoredSizes	DWORD	0
-sizeOfStored	DWORD 0
-sizeOfMyString	DWORD 0
-zeroToSize		DWORD 0
-X				DWORD 0
-superSum		DWORD 0
-check			DWORD 0
+sizeOfStored	DWORD	0
+sizeOfMyString	DWORD	0
+zeroToSize		DWORD	0
+X				DWORD	0
+superSum		DWORD	0
+check			DWORD	0
+numberLength	DWORD	0
+average			DWORD	0
 
 
 .code
@@ -198,16 +231,78 @@ main PROC
 
 	mSumMyArray storedNumbers, sizeOfStored, superSum
 
+
 	mWriteString yourSumIs
 
-	mWriteDec superSum
+	mGetMyLength superSum, numberLength
+
+
+
+	;mWriteDec numberLength
+
+
+	mClearStringNoSize OFFSET	outString, 10
+
+	prepWriteVal superSum, OFFSET outString, numberLength
+
+
+	;mWriteDec numberLength
 
 	mClearX	countOfStoredSizes
+
+	mGetAverage	superSum, 10, average
+
+	mWriteString YourAverage
+	
+
+
+	mGetMyLength	average, numberLength
+
+
+	prepWriteVal	average, OFFSET outAverage, numberLength
 
 
 
 	exit
 main ENDP
+
+DivideMeBy	PROC
+	mov	EBP,ESP
+	xor	EAX,EAX
+	xor	EDX,EDX
+	xor	ECX,ECX
+	xor	EDI,EDI
+	mov	EAX,[EBP+12]
+	mov	ECX,[EBP+8]
+	mov	EDI,[EBP+4]
+
+	DIV	ECX
+	mov	[EDI],EAX
+	ret	12
+DivideMeBy	ENDP
+
+howLongAmI	PROC
+	mov	EBP,ESP
+	xor	ECX,ECX
+	xor	EAX,EAX
+	xor	EDX,EDX
+	xor	EBX,EBX
+	mov	ECX,0
+	mov	EAX,[EBP+8]
+	mov	EBX,10
+	UntilQuotientZero:
+		xor	EDX,EDX
+		DIV	EBX
+		INC	ECX
+		CMP	EAX,0
+		JG	UntilQuotientZero
+
+	xor	EAX,EAX
+	xor	EDX,EDX
+	mov	EAX,[EBP+4]
+	mov	[EAX],ECX
+	ret	8
+howLongAmI	ENDP
 
 writeVal	PROC
 	mov	EBP,ESP
@@ -248,7 +343,7 @@ writeVal	ENDP
 
 sumMeUp	PROC
 	mov	EBP,ESP
-
+	xor	EBX,EBX
 	mov	EBX,[EBP+8]	;OFFSET of SizeOfStored in EBX
 	mov	EDX,[EBX]	;De-ref OFFSET and store what lives there in EDX
 
@@ -267,8 +362,10 @@ sumMeUp	PROC
 		JL	forEveryNum
 
 	push	EBX
+	xor		EBX,EBX
 	mov		EBX,[EBP+4]
 	mov		[EBX],EAX
+	xor		EBX,EBX
 	pop		EBX
 
 	ret	12
@@ -287,6 +384,7 @@ PrintUs	PROC
 		xor	EDI,EDI
 		mov	EDI,[EBP+12]
 		;prepWriteVal EAX, EDX, [EDI+ECX*4]
+		mClearStringNoSize [EBP+16], 10
 		prepWriteVal EAX, EDX, [EDI+ECX*4]
 		INC	ECX
 		CMP	ECX,10
@@ -330,6 +428,25 @@ ClearX	PROC
 	mov	[EBX],EAX
 	ret 4
 ClearX	ENDP
+
+
+ClearStringNoSize PROC
+	mov	EBP,ESP
+	mov ECX,[EBP+4]
+
+	mov	ESI,[EBP+8]
+	xor EBX,EBX
+	mov	EBX,0
+	forEveryChar:
+		mov	EAX,0
+		mov [ESI+EBX],EAX
+		INC	EBX
+		DEC	ECX
+		CMP	ECX,0
+		JNE	forEveryChar
+
+	ret 8
+ClearStringNoSize ENDP
 
 ClearString PROC
 	mov	EBP,ESP
