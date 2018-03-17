@@ -1,8 +1,9 @@
-TITLE Program Template     (template.asm)
+TITLE Project 6A     (project6a.asm)
 
-; Author:
-; Course / Project ID                 Date:
-; Description:
+; Author:	Jorge Manzo
+; Course / Project ID  Project 6a     Date: Sunday of Finals Week
+; Description: gets 10 valid integers from the user and stores the numeric values in an
+; array.  The program then displays the integers, their sum, and their average.
 
 INCLUDE Irvine32.inc
 
@@ -30,64 +31,47 @@ mWriteDec	MACRO	myNum
 	popad
 ENDM
 
-
-prepReadVal MACRO myString, sizeOfMyString, X, check, gimmieNext, numberSizes, countOfStoredSizes
+prepReadVal MACRO gimmieNext, originalStringInput, holdByte, howLongIsTheirInput, X, errorFlag
 	pushad
-	push	OFFSET	countOfStoredSizes
-	push	OFFSET	numberSizes
-	push	OFFSET	gimmieNext
-	push	OFFSET	check
-	push	OFFSET	X
-	push	OFFSET	myString
-	push	OFFSET	sizeOfMyString
+	push	OFFSET gimmieNext
+	push	OFFSET originalStringInput
+	push	OFFSET holdByte
+	push	OFFSET howLongIsTheirInput
+	push	OFFSET X
+	push	OFFSET errorFlag
 	call	ReadVal
 	popad
 ENDM
 
-mGetString	MACRO myString,	sizeOfMyString, gimmieNext
+mGetString	MACRO originalStringInput,	howLongIsTheirInput, gimmieNext
 	mWriteStringNoOffset gimmieNext
-	mov		ECX,10
-	mov		EDX,myString
+	mov		ECX,12
+	mov		EDX,originalStringInput
 	call	ReadString
-	mov		EBX,sizeOfMyString
+	mov		EBX,howLongIsTheirInput
 	mov		[EBX],EAX
 ENDM
 
-mVerify		MACRO myString, SizeOfMyString, X, check, numberSizes, countOfStoredSizes
+
+;Offset of errorFlag, Offset of X, Offset of howLongIsTheirInput, Offset of holdByte, Offset of  originalStringInput, Offset of gimmieNext
+mVerify		MACRO errorFlag, X, howLongIsTheirInput, holdByte, originalStringInput
 	pushad
-	push	countOfStoredSizes
-	push	numberSizes
-	push	check
+	push	originalStringInput
+	push	holdByte
+	push	howLongIsTheirInput
 	push	X
-	push	myString
-	push	SizeOfMyString
+	push	errorFlag
 	call	Verify
 	popad
 ENDM
 
-
-
-mConvert MACRO myChar, X
+;mConvert	[EBP+16],[EBP+8],[EBP+4]
+mConvert MACRO holdByte, X, errorFlag
 	pushad
-	push	myChar
+	push	errorFlag
+	push	holdByte
 	push	X
 	call	Convert
-	popad
-ENDM
-
-mClearString MACRO myString, SizeOfMyString
-	pushad
-	push	OFFSET	myString
-	push	OFFSET	SizeOfMyString
-	call	ClearString
-	popad
-ENDM
-
-mClearStringNoSize MACRO myString, SizeOfMyString
-	pushad
-	push	myString
-	push	SizeOfMyString
-	call	ClearStringNoSize
 	popad
 ENDM
 
@@ -98,10 +82,19 @@ mClearX		MACRO	X
 	popad
 ENDM
 
-mClearCheck	MACRO	check
+mClearStringLitSize  MACRO originalStringInput, SizeOfMyString
 	pushad
-	push	OFFSET	check
-	call	ClearCheck
+	push	OFFSET	originalStringInput
+	push	SizeOfMyString
+	call	ClearStringLitSize
+	popad
+ENDM
+
+mClearStringLitSizeNoOFFSET  MACRO originalStringInput, SizeOfMyString
+	pushad
+	push	originalStringInput
+	push	SizeOfMyString
+	call	ClearStringLitSize
 	popad
 ENDM
 
@@ -115,26 +108,20 @@ mAppendNum	MACRO	myArray, myNum, location
 ENDM
 
 
-;	mPrintArray	storedNumbers, outString, numberSizes, countOfStoredSizes
-
-mPrintArray	MACRO	myArray, outString, numberSizes, countOfStoredSizes
+mGetMyLength	MACRO	myNumber, numberLength
 	pushad
-	push	OFFSET	outString
-	push	OFFSET	numberSizes
-	push	OFFSET	countOfStoredSizes
-	push	OFFSET	myArray
-	call	PrintUs
+	push	myNumber
+	push	numberLength
+	call	howLongAmI
 	popad
 ENDM
 
-;	mSumMyArray storedNumbers, sizeOfStored, superSum
-
-mSumMyArray	MACRO	storedNumbers, sizeOfStored, superSum
+mPrintArray	MACRO	numberArray, outString, numberLength
 	pushad
-	push	OFFSET storedNumbers
-	push	OFFSET sizeOfStored
-	push	OFFSET superSum
-	call	sumMeUp
+	push	OFFSET	outString
+	push	OFFSET	numberLength
+	push	OFFSET	numberArray
+	call	PrintUs
 	popad
 ENDM
 
@@ -147,11 +134,12 @@ prepWriteVal MACRO	myNumber, outString, lengthOfMyNum
 	popad
 ENDM
 
-mGetMyLength	MACRO	myNumber, numberLength
+mSumMyArray	MACRO	numberArray, numberLength, superSum
 	pushad
-	push	myNumber
-	push	OFFSET	numberLength
-	call	howLongAmI
+	push	OFFSET numberArray
+	push	OFFSET numberLength
+	push	OFFSET superSum
+	call	sumMeUp
 	popad
 ENDM
 
@@ -165,106 +153,109 @@ mGetAverage	MACRO	myNumber,	DivideBy, OutNum
 ENDM
 
 .data
-myString	BYTE	11	DUP(?)
-tempString	BYTE	11	DUP(0)
-outString	BYTE	11	DUP(0)
-outAverage	BYTE	11	DUP(0)
 greetings	BYTE	"Hey. Give me 10 numbers, then Ill find some averages.",0
-badInput	BYTE	"OH. MY. GOD. HOW COULD YOU GIVE ME BAD INPUT?? OVO Rethink and try again.",0
-gimmieNext	BYTE	"Okay, give me a number:",0
-yourInput	BYTE	"You entered the following numbers:",0
-yourSumIs	BYTE	"Your sum is:",0
-yourAverage		BYTE	"Your Average is:",0
-storedNumbers	DWORD 10 DUP(0)
-numberSizes		DWORD 10 DUP(0)
-countOfStoredSizes	DWORD	0
-sizeOfStored	DWORD	0
-sizeOfMyString	DWORD	0
-zeroToSize		DWORD	0
-X				DWORD	0
-superSum		DWORD	0
-check			DWORD	0
-numberLength	DWORD	0
-average			DWORD	0
 
+isYourInputBad	BYTE	"Is your input bad?:",0
 
+yourInputIsBad	BYTE	"Please try giving input again. Your previous response was unacceptable",0
+
+hereAreYourNums	BYTE	"Here are the numbers you gave me:",0
+
+hereIsSum		BYTE	"Here is the sum of those numbers:",0
+
+hereIsAverage	BYTE	"Here is your average:",0
+
+gimmieNext			BYTE	"Please enter another number:",0
+originalStringInput	BYTE	11	DUP(?)
+holdByte			DWORD	0
+howLongIsTheirInput	DWORD	0
+X					DWORD	0
+errorFlag			DWORD	0
+
+index				DWORD	0
+numberArray			DWORD	10	DUP(0)	;Array of numbers which we will sum later
+
+numberLength		DWORD	0	;used to count how many characters make up a number
+outString			BYTE	11	DUP(0)
+
+averageOutString	BYTE	11	DUP(0)
+
+superSum			DWORD	0	;sum of the numbers in the array
+average				DWORD	0
 .code
-main PROC
+main proc
 	mWriteString greetings
-	TryAgain:
+	mov	ECX,0		;We Will use this to keep track of the insertion indicie in our numberArray
+	CollectTenNums:
+		prepReadVal gimmieNext, originalStringInput, holdByte, howLongIsTheirInput, X, errorFlag
+		;mWriteString	isYourInputBad
+		;mWriteDec		errorFlag
 
-	prepReadVal  myString, sizeOfMyString, X, check, gimmieNext, numberSizes, countOfStoredSizes
-	
+		push	EBX
+		mov	EBX,errorFlag
+		cmp	EBX,0
+		JE	inputGood
 
-	push	EBX
-	mov	EBX,check
-	cmp	EBX,0
-	JE	inputValid
+		pop	EBX
+		mWriteString	yourInputIsBad
+		mClearStringLitSize originalStringInput, howLongIsTheirInput
 
+		push	EAX
+		mov	EAX,0
+		mov	howLongIsTheirInput,EAX
+		pop	EAX
 
-	;examine the check variable. 1 = Error in input, 0 means its good.
-	pop		EBX
-	mWriteString badInput
-	mClearString myString, sizeOfMyString
-	mClearX	X
-	mClearCheck	check
-	JMP TryAgain
+		mClearX	X
+		mClearX	errorFlag
+		JMP	CollectTenNums
 
-	inputValid:
-	pop		EBX
-	mAppendNum	storedNumbers, X, sizeOfStored
-	mClearString myString, sizeOfMyString
-	mClearX	X
+		inputGood:
+			pop	EBX
+			mov	index,ECX
+			mAppendNum	numberArray, X, index
 
-	INC	sizeOfStored
-	push	EBX
-	mov	EBX,10
-	cmp	sizeOfStored,EBX
-	pop		EBX
-	JL	TryAgain
+			mClearStringLitSize originalStringInput, howLongIsTheirInput
+			mClearX	X
 
-	mWriteString yourInput
+			push	EAX
+			mov	EAX,0
+			mov	howLongIsTheirInput,EAX
+			pop	EAX
 
-	mPrintArray	storedNumbers, outString, numberSizes, countOfStoredSizes
+			INC	ECX
+			CMP	ECX,10
+			JL	CollectTenNums
 
+	mWriteString	hereAreYourNums
 
-
-	mSumMyArray storedNumbers, sizeOfStored, superSum
-
-
-	mWriteString yourSumIs
-
-	mGetMyLength superSum, numberLength
-
-
-
-	;mWriteDec numberLength
+	mPrintArray	numberArray, outString, numberLength
 
 
-	mClearStringNoSize OFFSET	outString, 10
+	mWriteString	hereIsSum
 
-	prepWriteVal superSum, OFFSET outString, numberLength
-
-
-	;mWriteDec numberLength
-
-	mClearX	countOfStoredSizes
-
-	mGetAverage	superSum, 10, average
-
-	mWriteString YourAverage
-	
+	mSumMyArray numberArray, numberLength, superSum
 
 
-	mGetMyLength	average, numberLength
+	mClearX	numberLength
 
+	mGetMyLength	superSum, OFFSET numberLength
 
-	prepWriteVal	average, OFFSET outAverage, numberLength
+	prepWriteVal	superSum, OFFSET outString, numberLength
 
+	mWriteString	hereIsAverage
 
+	mGetAverage	superSum,	10,	average
+
+	;mWriteDec	Average
+
+	mClearX	numberLength
+
+	mGetMyLength	average, OFFSET numberLength
+
+	prepWriteVal	average, OFFSET averageOutString, numberLength
 
 	exit
-main ENDP
+main endp
 
 DivideMeBy	PROC
 	mov	EBP,ESP
@@ -281,28 +272,34 @@ DivideMeBy	PROC
 	ret	12
 DivideMeBy	ENDP
 
-howLongAmI	PROC
+sumMeUp	PROC
 	mov	EBP,ESP
-	xor	ECX,ECX
-	xor	EAX,EAX
-	xor	EDX,EDX
-	xor	EBX,EBX
-	mov	ECX,0
-	mov	EAX,[EBP+8]
-	mov	EBX,10
-	UntilQuotientZero:
-		xor	EDX,EDX
-		DIV	EBX
-		INC	ECX
-		CMP	EAX,0
-		JG	UntilQuotientZero
 
-	xor	EAX,EAX
-	xor	EDX,EDX
-	mov	EAX,[EBP+4]
-	mov	[EAX],ECX
-	ret	8
-howLongAmI	ENDP
+
+	xor	EBX,EBX
+	mov	EBX,[EBP+4]	;OFFSET of Supersum now lives in EBX
+	mov	EAX,[EBX]	;De-ref OFFSET and store what lives there in EAX
+
+	xor	EBX,EBX
+	mov	EBX,[EBP+12] ;OFFSET of storedNumbers in EBX
+	
+	xor	ECX,ECX
+	mov	ECX,0
+	forEveryNum:
+		ADD	EAX,[EBX+ECX*4]
+		INC	ECX
+		CMP	ECX,10
+		JL	forEveryNum
+
+	push	EBX
+	xor		EBX,EBX
+	mov		EBX,[EBP+4]
+	mov		[EBX],EAX
+	xor		EBX,EBX
+	pop		EBX
+
+	ret	12
+sumMeUp	ENDP
 
 writeVal	PROC
 	mov	EBP,ESP
@@ -341,36 +338,6 @@ writeVal	PROC
 	ret	12
 writeVal	ENDP
 
-sumMeUp	PROC
-	mov	EBP,ESP
-	xor	EBX,EBX
-	mov	EBX,[EBP+8]	;OFFSET of SizeOfStored in EBX
-	mov	EDX,[EBX]	;De-ref OFFSET and store what lives there in EDX
-
-	xor	EBX,EBX
-	mov	EBX,[EBP+4]	;OFFSET of Supersum now lives in EBX
-	mov	EAX,[EBX]	;De-ref OFFSET and store what lives there in EAX
-
-	xor	EBX,EBX
-	mov	EBX,[EBP+12] ;OFFSET of storedNumbers in EBX
-	
-	xor	ECX,ECX
-	forEveryNum:
-		ADD	EAX,[EBX+ECX*4]
-		INC	ECX
-		CMP	ECX,EDX
-		JL	forEveryNum
-
-	push	EBX
-	xor		EBX,EBX
-	mov		EBX,[EBP+4]
-	mov		[EBX],EAX
-	xor		EBX,EBX
-	pop		EBX
-
-	ret	12
-sumMeUp	ENDP
-
 PrintUs	PROC
 	mov	EBP,ESP
 	mov	EBX,[EBP+4]
@@ -380,18 +347,47 @@ PrintUs	PROC
 		mov	EAX,[EBX+ECX*4]
 		;mWriteDec EAX
 		xor	EDX,EDX
-		mov	EDX,[EBP+16]
+		mov	EDX,[EBP+12]
 		xor	EDI,EDI
-		mov	EDI,[EBP+12]
-		;prepWriteVal EAX, EDX, [EDI+ECX*4]
-		mClearStringNoSize [EBP+16], 10
-		prepWriteVal EAX, EDX, [EDI+ECX*4]
+		
+		
+		mGetMyLength	EAX,[EBP+8]
+		mov	EDI,[EBP+8]
+
+		;prepWriteVal EAX (non offset), EDX (offset of outstring, [EDI+ECX*4] (non offset)
+		mClearStringLitSizeNoOFFSET [EBP+12], 11
+		;mWriteDec [EDI+ECX*4]
+
+		prepWriteVal EAX, EDX, [EDI]
 		INC	ECX
 		CMP	ECX,10
 		JL	forEveryChar
 
-	ret 4
+	ret 8
 PrintUs	ENDP
+
+howLongAmI	PROC
+	mov	EBP,ESP
+	xor	ECX,ECX
+	xor	EAX,EAX
+	xor	EDX,EDX
+	xor	EBX,EBX
+	mov	ECX,0
+	mov	EAX,[EBP+8]
+	mov	EBX,10
+	UntilQuotientZero:
+		xor	EDX,EDX
+		DIV	EBX
+		INC	ECX
+		CMP	EAX,0
+		JG	UntilQuotientZero
+
+	xor	EAX,EAX
+	xor	EDX,EDX
+	mov	EAX,[EBP+4]
+	mov	[EAX],ECX
+	ret	8
+howLongAmI	ENDP
 
 AppendNumber	PROC
 	mov	EBP,ESP
@@ -401,7 +397,7 @@ AppendNumber	PROC
 	xor	EBX,EBX
 
 	mov	EBX,[EBP+12]
-	mov	EAX,[EBX]	;Location now lives in EAX
+	mov	EAX,[EBX]	;Index now lives in EAX
 
 	xor	EBX,EBX
 
@@ -409,17 +405,10 @@ AppendNumber	PROC
 	mov	ECX,[EBX]	;MyNum now lives in ECX
 
 	mov	[EDX+EAX*4],ECX
+	;mWriteDec [EDX+EAX*4]
 		
 	ret	12
 AppendNumber	ENDP
-
-ClearCheck	PROC
-	mov	EBP,ESP
-	mov	EAX,0
-	mov	EBX,[EBP+4]
-	mov	[EBX],EAX
-	ret	4
-ClearCHeck	ENDP
 
 ClearX	PROC
 	mov	EBP,ESP
@@ -430,7 +419,7 @@ ClearX	PROC
 ClearX	ENDP
 
 
-ClearStringNoSize PROC
+ClearStringLitSize  PROC
 	mov	EBP,ESP
 	mov ECX,[EBP+4]
 
@@ -446,102 +435,106 @@ ClearStringNoSize PROC
 		JNE	forEveryChar
 
 	ret 8
-ClearStringNoSize ENDP
+ClearStringLitSize  ENDP
 
-ClearString PROC
-	mov	EBP,ESP
-	mov EBX,[EBP+4]
-	mov	ECX,[EBX]
-
-	mov	ESI,[EBP+8]
-	xor EBX,EBX
-	mov	EBX,0
-	forEveryChar:
-		mov	EAX,0
-		mov [ESI+EBX],EAX
-		INC	EBX
-		DEC	ECX
-		CMP	ECX,0
-		JNE	forEveryChar
-
-	ret 8
-ClearString ENDP
 
 Convert	PROC
 	mov	EBP,ESP
+	xor	EBX,EBX
+	mov	EBX,[EBP+8] ;Move offset of HoldByte into EBX
+	mov	EAX,[EBX]		;Deref offset of hold byte into EAX
 
-	mov	AL,[EBP+8]
 	SUB	AL,48
-	mov	[EBP+8],AL
+	mov	[EBX],EAX	;Move into the deref'ed offset of holdByte the contents of EAX
 
+	xor	EBX,EBX
+	xor	EAX,EAX
+	xor	EDX,EDX
+	xor ECX,ECX
+
+	mov	EBX,[EBP+4]	;move offset of X into EBX
+	mov	EAX,[EBX]	;Move the deref'ed offset of X into EAX
+	mov	ECX,10
+	MUL	ECX			;Multiply the value in EAX by 10
+	JC	BADINPUT
+
+	xor	EBX,EBX
+	mov	EBX,[EBP+8]	;move OFFSET of HoldByte into EBX
+	ADD	EAX,[EBX]	;Add onto EAX, X * 10, the value stored in the deref'ed offset of holdbyte. If the number is too huge, this should trigger the Carry flag
+
+	JC	BADINPUT
+
+	xor	EBX,EBX
 	mov	EBX,[EBP+4]
-	mov	EAX,[EBX]
-	mov	EDX,10
-	MUL	EDX
+	mov	[EBX],EAX	;Save our new 'X' into the de'ref'ed offset of X
+	JMP	FINISH
 
-	ADD EAX,[EBP+8]
+	BADINPUT:
+		xor	EBX,EBX
+		mov	EBX,[EBP+12]
+		
+		xor	EAX,EAX
+		mov	EAX,1
+		mov	[EBX],EAX
 
-	mov	[EBX],EAX
-
-	ret 8
+	FINISH:
+	ret 12
 Convert	ENDP
 
 Verify	PROC
 	mov	EBP,ESP
-	mov	EBX,[EBP+4]
-	mov	ECX,[EBX]		;size of the array now lives in ECX
+	mov	ECX,[EBP+12]	;Move offset of howLongIsTheirInput into ECX
+	mov	ECX,[ECX]		;Deref and store in ECX
+	CMP	ECX,10			;If their input is Less than 10, we will check just however long the string is, however, if it is equal to 10, than we must check all 10 characters
+	JG	CHECKALL
+	JMP	CHECKREQ
 	
+	CHECKALL:
+		mov	ECX,11
+		JMP	CHECKREQ
+	CHECKREQ:
 
 	cld
-	mov	ESI,[EBP+8]
+	mov	ESI,[EBP+20] ;Offset of original String input is now in ESI
 	forEveryChar:
-		LODSB
+		LODSB	;Load one char into EAX's AL
 		CMP	AL,48
-		JL	INVALID
+		JL	BADINPUT
 		CMP	AL,57
-		JG	INVALID
-		mConvert	EAX,[EBP+12]
+		JG	BADINPUT
+		mov	EBX,[EBP+16]	;Move the offset of HoldByte into EBX
+		mov	[EBX],EAX		;Store out suspect BYTE in EBX
+		mov	EBX,[EBX]
+		mConvert	[EBP+16],[EBP+8],[EBP+4]
+
+
+		;Check for a set ErrorFlag
+		xor	EDX,EDX
+		mov	EDX,[EBP+4]	;move offset of ErrorFlag into EDX
+		mov	EDX,[EDX]	;Deref that to get its value, saving in EDX
+		CMP	EDX,1		;If EDX is 1, that means error flag is set, so we can jump to finish
+		JE	FINISH
+
+
 		DEC	ECX
 		CMP	ECX,0
 		JE	FINISH
-		JMP forEveryChar
+		JMP	forEveryChar
 
-		INVALID:
+		BADINPUT:
 			mov	EAX,1
-			mov	EBX,[EBP+16]
-			mov	[EBX],EAX
+			mov	EBX,[EBP+4]
+			mov	[EBX],EAX	;Set errorFlag to 1
 			JMP	FINISH
+
 	FINISH:
-	xor	EBX,EBX
-	xor	EAX,EAX
-	xor	EDI,EDI
-
-	mov	EBX,[EBP+4]
-	mov	EDI,[EBX]
-
-	mov	EBX,[EBP+24]
-	mov	EAX,[EBX]		;EAX now has the indicy
-
-	mov	EBX,[EBP+20]
-	mov	[EBX+EAX*4],EDI
-
-	INC	EAX
-	xor	EBX,EBX
-	mov	EBX,[EBP+24]
-	mov	[EBX],EAX
-
-	ret	24
+	ret	20
 Verify	ENDP
 
 ReadVal	PROC
 	mov	EBP,ESP
-	mGetString	[EBP+8],[EBP+4],[EBP+20] ; @myString, @sizeOfMyString, @gimmieNext
-	mVerify		[EBP+8],[EBP+4],[EBP+12],[EBP+16],[EBP+24],[EBP+28]	;
-	mov	EBX,[EBP+16]
-	mov	EBX,[EBX]
-	CMP	EBX,1
-	ret 28
+	mGetString [EBP+20],[EBP+12],[EBP+24] ; Offset of originalString Input, Offset of howLongIsTheirInput, Offset of gimmieNext
+	mVerify		[EBP+4],[EBP+8],[EBP+12],[EBP+16],[EBP+20] ;Offset of errorFlag, Offset of X, Offset of howLongIsTheirInput, Offset of holdByte, Offset of  originalStringInput
+	ret	24
 ReadVal	ENDP
-
-
-END main
+end main
