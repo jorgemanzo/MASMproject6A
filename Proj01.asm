@@ -7,14 +7,15 @@ TITLE Project 6A     (project6a.asm)
 
 INCLUDE Irvine32.inc
 
-mWriteString MACRO myString
-	pushad
-	mov		EDX,OFFSET myString
-	call	WriteString
-	call	CrLf
-	popad
-ENDM
+;mWriteString MACRO myString
+	;pushad
+	;mov		EDX,OFFSET myString
+	;call	WriteString
+	;call	CrLf
+	;popad
+;ENDM
 
+;This is the "displayString" macro, expecting an offset
 mWriteStringNoOffset	MACRO	myString
 	pushad
 	mov		EDX,myString
@@ -30,7 +31,7 @@ mWriteDec	MACRO	myNum
 	call	CrlF
 	popad
 ENDM
-
+;This is my ReadVal PROC. I elected to wrap my PROCs in macros for ease of use
 prepReadVal MACRO gimmieNext, originalStringInput, holdByte, howLongIsTheirInput, X, errorFlag
 	pushad
 	push	OFFSET gimmieNext
@@ -42,7 +43,7 @@ prepReadVal MACRO gimmieNext, originalStringInput, holdByte, howLongIsTheirInput
 	call	ReadVal
 	popad
 ENDM
-
+;This is the "getString" macro. Expects all as OFFSET
 mGetString	MACRO originalStringInput,	howLongIsTheirInput, gimmieNext
 	mWriteStringNoOffset gimmieNext
 	mov		ECX,12
@@ -124,7 +125,7 @@ mPrintArray	MACRO	numberArray, outString, numberLength
 	call	PrintUs
 	popad
 ENDM
-
+;This is WriteVal procedure. I elected to wrap my PROCs in a macro for ease of use
 prepWriteVal MACRO	myNumber, outString, lengthOfMyNum
 	pushad
 	push	lengthOfMyNum
@@ -184,7 +185,7 @@ superSum			DWORD	0	;sum of the numbers in the array
 average				DWORD	0
 .code
 main proc
-	mWriteString greetings
+	mWriteStringNoOffset OFFSET greetings
 	mov	ECX,0		;We Will use this to keep track of the insertion indicie in our numberArray
 	CollectTenNums:
 		prepReadVal gimmieNext, originalStringInput, holdByte, howLongIsTheirInput, X, errorFlag
@@ -197,7 +198,7 @@ main proc
 		JE	inputGood
 
 		pop	EBX
-		mWriteString	yourInputIsBad
+		mWriteStringNoOffset	OFFSET yourInputIsBad
 		mClearStringLitSize originalStringInput, howLongIsTheirInput
 
 		push	EAX
@@ -226,12 +227,12 @@ main proc
 			CMP	ECX,10
 			JL	CollectTenNums
 
-	mWriteString	hereAreYourNums
+	mWriteStringNoOffset	OFFSET hereAreYourNums
 
 	mPrintArray	numberArray, outString, numberLength
 
 
-	mWriteString	hereIsSum
+	mWriteStringNoOffset	OFFSET hereIsSum
 
 	mSumMyArray numberArray, numberLength, superSum
 
@@ -242,7 +243,7 @@ main proc
 
 	prepWriteVal	superSum, OFFSET outString, numberLength
 
-	mWriteString	hereIsAverage
+	mWriteStringNoOffset	OFFSET hereIsAverage
 
 	mGetAverage	superSum,	10,	average
 
